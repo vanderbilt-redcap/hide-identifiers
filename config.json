@@ -1,0 +1,52 @@
+{
+  "name": "Hide Identifiers",
+
+  "namespace": "Vanderbilt\\HideIdentifiersExternalModule",
+
+  "framework-version": 2,
+
+  "authors": [
+    {
+      "name": "Ryan Moore",
+      "email": "datacore@vumc.org",
+      "institution": "Vanderbilt University Medical Center"
+    }
+  ],
+
+  "description": "Obscure values in fields marked as identifiers from users who do not have user rights to see them in reports. Only turns the fields into password fields. Also removes secondary record names if they use fields marked as identifiers.",
+
+  "permissions": [
+    "redcap_data_entry_form",
+    "redcap_data_entry_form_top",
+    "redcap_save_record",
+    "redcap_every_page_top"
+  ],
+
+  "links": {
+    "project": [
+    ]
+  },
+
+  "no-auth-pages":[""],
+
+  "project-settings": [
+    {
+      "key": "remove-fields",
+      "name": "Completely Remove Fields from Form",
+      "type":"radio",
+      "choices": [
+        {"value":"yes", "name":"Yes"},
+        {"value":"no","name":"No"}
+      ]
+    }
+  ],
+
+  "system-settings": [
+  ],
+  "compatibility": {
+    "php-version-min": "",
+    "php-version-max": "",
+    "redcap-version-min": "9.0.3",
+    "redcap-version-max": ""
+  }
+}
