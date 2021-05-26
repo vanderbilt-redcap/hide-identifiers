@@ -29,13 +29,18 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
 
                 if ($this->customLabelHasPHI($customRecordLabel, $phiFields)) {
                     echo "<script type='text/javascript'>
-                $(document).ready(function() { 
-                    $('span.crl').each(function() {
-                        this.remove();
-                    }); 
-                    $('#record_display_name').find('span').remove(); 
-                });
-            </script>";
+                        $(document).ready(function() { 
+                            $('span.crl').each(function() {
+                                this.remove();
+                            }); 
+                            $('#record_display_name').find('span').remove();
+                            $('select[id=\'record\'] > option').each(function() {
+                                if (this.value != '') {
+                                    this.text = this.value;
+                                }
+                            });
+                        });
+                    </script>";
                 }
             }
         }
