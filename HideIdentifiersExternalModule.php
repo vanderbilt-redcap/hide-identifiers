@@ -27,7 +27,7 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                     }
                 }
 
-                if ($this->customLabelHasPHI($customRecordLabel, $phiFields)) {
+                if ($this->elementHasPHI($customRecordLabel, $phiFields)) {
                     echo "<script type='text/javascript'>
                         $(document).ready(function() { 
                             $('span.crl').each(function() {
@@ -54,14 +54,40 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
             $removeFields = $this->getProjectSetting('remove-fields');
             $phiFields = array();
 
-            $javaString = "<script type='text/javascript'>$(document).ready(function() {";
-            foreach ($fieldsOnForm as $field) {
-                if ($metaData[$field]['field_phi'] == 1) {
-                    $javaString .= $this->hideFormField($metaData[$field], $removeFields);
-                    $phiFields[] = $field;
+            foreach ($metaData as $fieldName => $fieldData) {
+                if ($fieldData['field_phi'] == 1) {
+                    $phiFields[] = $fieldName;
                 }
             }
+
+            $phiData = \Records::getData($project_id,'json',array($record),$phiFields);
+
+            $javaString = "<script type='text/javascript'>$(document).ready(function() {";
+            foreach ($fieldsOnForm as $field) {
+                if (in_array($field,$phiFields)) {
+                    $javaString .= $this->hideFormField($metaData[$field], $removeFields);
+                }
+
+                $labelHasPHI = $this->elementHasPHI($metaData[$field]['element_label'],$phiFields);
+                $pipingHasPHI = $this->elementHasPHI($metaData[$field]['misc'],$phiFields);
+
+                if ($labelHasPHI) {
+                    $sanitizedLabel = str_replace("\r\n","",nl2br(decode_filter_tags($metaData[$field]['element_label'])));
+                    foreach ($phiFields as $phiField) {
+                        if (strpos($sanitizedLabel,"[".$phiField."]") !== false) {
+                            $sanitizedLabel = str_replace("[".$phiField."]","****",$sanitizedLabel);
+                        }
+                    }
+                    $embeddedFieldReplacement = \Piping::replaceVariablesInLabel($sanitizedLabel, $record, $event_id);
+                    $javaString .= $this->changeFieldLabel($field,$embeddedFieldReplacement);
+                }
+                if ($pipingHasPHI) {
+                    $javaString .= $this->hideFormField($metaData[$field], $removeFields);
+                }
+
+            }
             $javaString .= "});</script>";
+            echo "<br/><br/>";
             echo $javaString;
         }
     }
@@ -77,6 +103,12 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
         return $returnString;
     }
 
+    private function changeFieldLabel($fieldName,$label) {
+        $returnString = "";
+        $returnString = "$('tr[id=\'$fieldName-tr\'] td').first().html('$label');";
+        return $returnString;
+    }
+
     private function hasCustomRecordLabel($project_id) {
         if(empty($project_id) || !is_numeric($project_id)){
             return null;
@@ -88,16 +120,22 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
         return $row['custom_record_label'];
     }
 
-    private function customLabelHasPHI($customRecordLabel,$phiFields) {
-        preg_match_all("/\[(.*?)\]/",$customRecordLabel,$matchRegEx);
+    private function elementHasPHI($customString,$phiFields) {
+        $matchRegEx = $this->pregMatchFields($customString);
         $stringsToReplace = $matchRegEx[0];
         $fieldNamesReplace = $matchRegEx[1];
+
         foreach ($fieldNamesReplace as $index => $fieldName) {
             if (in_array($fieldName,$phiFields)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private function pregMatchFields($checkString) {
+        preg_match_all("/\[(.*?)\]/",$checkString,$matchRegEx);
+        return $matchRegEx;
     }
 
     private function userDeIdentified($project_id,$user) {
