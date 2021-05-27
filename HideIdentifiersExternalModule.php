@@ -87,7 +87,6 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
 
             }
             $javaString .= "});</script>";
-            echo "<br/><br/>";
             echo $javaString;
         }
     }
