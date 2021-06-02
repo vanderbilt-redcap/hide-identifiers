@@ -39,6 +39,7 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                                     this.text = this.value;
                                 }
                             });
+                            $('#contextMsg span').remove();
                         });
                     </script>";
                 }
@@ -86,6 +87,7 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                 }
 
             }
+
             $javaString .= "});</script>";
             echo $javaString;
         }
