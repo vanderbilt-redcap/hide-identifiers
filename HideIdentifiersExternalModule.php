@@ -20,19 +20,38 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                 $customRecordLabel = $this->hasCustomRecordLabel($project_id);
 
                 $phiFields = array();
-                $javaString = "<script type='text/javascript'>$(document).ready(function() {";
                 foreach ($fieldsOnForm as $field) {
                     if ($metaData[$field]['field_phi'] == 1) {
                         $phiFields[] = $field;
                     }
                 }
 
+                $phiColumns = array();
+                if ($_GET['report_id'] != "") {
+                    $report = \DataExport::getReports($_GET['report_id'],(isset($_GET['instruments']) ? explode(',', $_GET['instruments']) : array()),(isset($_GET['events']) ? explode(',', $_GET['events']) : array()));
+
+                    foreach ($report['fields'] as $columnNumber => $reportField) {
+                        if ($metaData[$reportField]['element_type'] == 'descriptive') {
+                            unset($report['fields'][$columnNumber]);
+                            $report['fields'] = array_values($report['fields']);
+                        }
+                    }
+                    foreach ($report['fields'] as $columnNumber => $reportField) {
+                        if (in_array($reportField,$phiFields)) {
+                            $phiColumns[] = $columnNumber;
+                        }
+                        else if ($this->elementHasPHI($metaData[$reportField]['misc'],$phiFields)) {
+                            $phiColumns[] = $columnNumber;
+                        }
+                    }
+                }
+
                 if ($this->elementHasPHI($customRecordLabel, $phiFields)) {
-                    echo "<script type='text/javascript'>
-                        $(document).ready(function() { 
+                    $javaString = "<script type='text/javascript'>
+                        $(document).ready(function() {
                             $('span.crl').each(function() {
                                 this.remove();
-                            }); 
+                            });
                             $('#record_display_name').find('span').remove();
                             $('select[id=\'record\'] > option').each(function() {
                                 if (this.value != '') {
@@ -40,8 +59,50 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                                 }
                             });
                             $('#contextMsg span').remove();
-                        });
-                    </script>";
+                            
+                        });";
+                    if (strpos($_SERVER[REQUEST_URI],"/DataExport/") !== false && $_GET['report_id'] != "") {
+                        $javaString .= "function addObserverIfDesiredNodeAvailable() {
+                            var target = $('#report_parent_div')[0];
+                            if(!target) {
+                                //The node we need does not exist yet.
+                                //Wait 500ms and try again
+                                window.setTimeout(addObserverIfDesiredNodeAvailable,10);
+                                return;
+                            }
+                            
+                            // Create an observer instance
+                            var observer = new MutationObserver(function( mutations ) {                              
+                                                    mutations.forEach(function( mutation ) {
+                                                        var newNodes = mutation.addedNodes;
+                                                        if( newNodes !== null ) {
+                                                            $(newNodes[0]).find('tbody tr').each(function() {";
+                        foreach ($phiColumns as $phiColumn) {
+                            $javaString .= "console.log(this.children);if (this.children[$phiColumn].innerHTML != '') {
+                                                                        this.children[$phiColumn].innerHTML = '****';
+                                                                    }";
+                        }
+                        $javaString .= "                        });
+                                                            $('span.crl').each(function() {
+                                                                this.remove();
+                                                            });
+                                                        }
+                                                    });
+                            });
+                            var config = { 
+                                attributes: true, 
+                                childList: true, 
+                                characterData: true 
+                            };
+                            observer.observe(target,config);
+                        }
+                        addObserverIfDesiredNodeAvailable();";
+                    }
+                    else {
+                        echo "Nope no need for observers<br/>";
+                    }
+                    $javaString .= "</script>";
+                    echo $javaString;
                 }
             }
         }
