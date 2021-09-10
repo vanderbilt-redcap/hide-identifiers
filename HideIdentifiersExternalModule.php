@@ -99,7 +99,7 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                         addObserverIfDesiredNodeAvailable();";
                     }
                     else {
-                        echo "Nope no need for observers<br/>";
+                        //echo "Nope no need for observers<br/>";
                     }
                     $javaString .= "</script>";
                     echo $javaString;
