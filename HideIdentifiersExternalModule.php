@@ -78,7 +78,7 @@ class HideIdentifiersExternalModule extends AbstractExternalModule
                                                         if( newNodes !== null ) {
                                                             $(newNodes[0]).find('tbody tr').each(function() {";
                         foreach ($phiColumns as $phiColumn) {
-                            $javaString .= "console.log(this.children);if (this.children[$phiColumn].innerHTML != '') {
+                            $javaString .= "if (this.children[$phiColumn].innerHTML != '') {
                                                                         this.children[$phiColumn].innerHTML = '****';
                                                                     }";
                         }
